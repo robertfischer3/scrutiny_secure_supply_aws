@@ -43,11 +43,6 @@ module "vpc" {
   flow_log_traffic_type                = var.flow_log_traffic_type
   flow_log_destination_arn             = var.flow_log_destination_arn
   
-  # VPC Endpoints for AWS services (no need for internet gateway)
-  enable_s3_endpoint              = var.enable_s3_endpoint
-  enable_dynamodb_endpoint        = var.enable_dynamodb_endpoint
-  s3_endpoint_private_dns_enabled = false # S3 Gateway endpoints don't support private DNS
-  
   # Network ACLs
   public_dedicated_network_acl   = var.public_dedicated_network_acl
   private_dedicated_network_acl  = var.private_dedicated_network_acl

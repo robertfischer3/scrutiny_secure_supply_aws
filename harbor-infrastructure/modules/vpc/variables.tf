@@ -175,6 +175,12 @@ variable "enable_dynamodb_endpoint" {
   default     = false
 }
 
+variable "s3_endpoint_private_dns_enabled" {
+  description = "Whether to enable private DNS for the S3 VPC endpoint"
+  type        = bool
+  default     = false
+}
+
 variable "create_vpc_endpoint_sg" {
   description = "Whether to create a security group for VPC endpoints"
   type        = bool
