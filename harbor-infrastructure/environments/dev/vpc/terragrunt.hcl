@@ -7,18 +7,11 @@ terraform {
 }
 
 inputs = {
-  vpc_name             = "harbor-vpc-${local.environment}"
+  vpc_name             = "harbor-vpc-${get_terragrunt_dir()}" 
   enable_nat_gateway   = true
-  single_nat_gateway   = local.environment != "prod" # Use multiple NAT gateways only in prod
+  single_nat_gateway   = get_env("TG_VAR_environment", "dev") != "prod" # Use multiple NAT gateways only in prod
   enable_dns_hostnames = true
   enable_dns_support   = true
-  
-  # VPC endpoints for AWS services
-  enable_s3_endpoint          = true
-  enable_ecr_api_endpoint     = true
-  enable_ecr_dkr_endpoint     = true
-  enable_kms_endpoint         = true
-  enable_secretsmanager_endpoint = true
   
   # NACL rules for additional security
   public_inbound_acl_rules  = [
@@ -46,7 +39,7 @@ inputs = {
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
-      cidr_block  = local.vpc_cidr
+      cidr_block  = "${get_env("TG_VAR_vpc_cidr", "10.0.0.0/16")}"
     }
   ]
 }

@@ -43,6 +43,7 @@ module "vpc" {
   flow_log_traffic_type                = var.flow_log_traffic_type
   flow_log_destination_arn             = var.flow_log_destination_arn
   
+  
   # Network ACLs
   public_dedicated_network_acl   = var.public_dedicated_network_acl
   private_dedicated_network_acl  = var.private_dedicated_network_acl

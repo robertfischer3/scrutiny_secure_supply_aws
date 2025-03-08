@@ -148,26 +148,6 @@ output "default_vpc_cidr_block" {
   value       = module.vpc.default_vpc_cidr_block
 }
 
-output "vpc_endpoint_s3_id" {
-  description = "The ID of VPC endpoint for S3"
-  value       = module.vpc.vpc_endpoint_s3_id
-}
-
-output "vpc_endpoint_s3_pl_id" {
-  description = "The prefix list for the S3 VPC endpoint"
-  value       = module.vpc.vpc_endpoint_s3_pl_id
-}
-
-output "vpc_endpoint_dynamodb_id" {
-  description = "The ID of VPC endpoint for DynamoDB"
-  value       = module.vpc.vpc_endpoint_dynamodb_id
-}
-
-output "vpc_endpoint_dynamodb_pl_id" {
-  description = "The prefix list for the DynamoDB VPC endpoint"
-  value       = module.vpc.vpc_endpoint_dynamodb_pl_id
-}
-
 output "vpc_flow_log_id" {
   description = "The ID of the Flow Log resource"
   value       = module.vpc.vpc_flow_log_id
