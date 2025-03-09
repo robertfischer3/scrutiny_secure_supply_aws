@@ -60,8 +60,15 @@ inputs = {
 
 dependency "vpc" {
   config_path = "../vpc"
+  skip_outputs = false
 }
 
 dependency "kms" {
   config_path = "../kms"
+  skip_outputs = false
+}
+
+# Explicitly state that this module cannot be created until dependencies are ready
+dependencies {
+  paths = ["../vpc", "../kms"]
 }

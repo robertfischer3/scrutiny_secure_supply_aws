@@ -47,13 +47,13 @@ wait_for_resource() {
   
   case $resource_type in
     "eks")
-      aws eks wait cluster-active --name $identifier --region us-east-1 --timeout-seconds $timeout
+      aws eks wait cluster-active --name $identifier --region us-west-2 --timeout-seconds $timeout
       ;;
     "vpc")
-      aws ec2 wait vpc-available --vpc-ids $identifier --region us-east-1 --timeout-seconds $timeout
+      aws ec2 wait vpc-available --vpc-ids $identifier --region us-west-2 --timeout-seconds $timeout
       ;;
     "rds")
-      aws rds wait db-instance-available --db-instance-identifier $identifier --region us-east-1 --timeout-seconds $timeout
+      aws rds wait db-instance-available --db-instance-identifier $identifier --region us-west-2 --timeout-seconds $timeout
       ;;
     *)
       log "Unknown resource type: $resource_type"

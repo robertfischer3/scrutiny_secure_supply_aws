@@ -121,7 +121,7 @@ remote_state {
   config = {
     bucket         = "harbor-terraform-state-${get_aws_account_id()}"
     key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "us-east-1"
+    region         = "us-west-2"
     encrypt        = true
     dynamodb_table = "harbor-terraform-locks"
   }
@@ -132,7 +132,7 @@ generate "provider" {
   if_exists = "overwrite_terragrunt"
   contents  = <<-EOF
     provider "aws" {
-      region = "us-east-1"
+      region = "us-west-2"
       
       default_tags {
         tags = {

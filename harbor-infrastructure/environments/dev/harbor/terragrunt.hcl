@@ -19,7 +19,7 @@ inputs = {
   # Storage settings
   storage_type  = "s3"
   s3_bucket_name = dependency.s3.outputs.s3_bucket_id
-  s3_region      = "us-east-1"
+  s3_region      = "us-west-2"
   s3_access_key  = "use_irsa" # Use IAM Roles for Service Accounts instead
   s3_secret_key  = "use_irsa" # Use IAM Roles for Service Accounts instead
   
@@ -147,16 +147,25 @@ inputs = {
 
 dependency "eks" {
   config_path = "../eks"
+  skip_outputs = false
 }
 
 dependency "rds" {
   config_path = "../rds"
+  skip_outputs = false
 }
 
 dependency "s3" {
   config_path = "../s3"
+  skip_outputs = false
 }
 
 dependency "waf" {
   config_path = "../waf"
+  skip_outputs = false
+}
+
+# Explicitly state that this module cannot be created until dependencies are ready
+dependencies {
+  paths = ["../eks", "../rds", "../s3", "../waf"]
 }

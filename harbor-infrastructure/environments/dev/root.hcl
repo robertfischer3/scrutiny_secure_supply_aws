@@ -14,7 +14,7 @@ locals {
   node_instance_types = ["m5.large"]
   
   # Harbor configuration
-  harbor_domain       = "harbor-${local.environment}.example.com"
+  harbor_domain       = "harbor-${local.environment}.scruntiny-harbor.com"
   harbor_namespace    = "harbor"
 }
 

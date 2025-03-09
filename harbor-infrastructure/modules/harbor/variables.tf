@@ -24,7 +24,7 @@ variable "s3_bucket_name" {
 variable "s3_region" {
   description = "AWS region for S3 bucket"
   type        = string
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 variable "s3_access_key" {
@@ -375,7 +375,7 @@ variable "load_balancer_arn" {
 variable "aws_region" {
   description = "AWS region where Harbor is deployed"
   type        = string
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 # Namespace settings

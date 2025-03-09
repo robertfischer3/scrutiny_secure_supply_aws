@@ -234,7 +234,7 @@ variable "cluster_autoscaler_version" {
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 variable "enable_amazon_prometheus" {

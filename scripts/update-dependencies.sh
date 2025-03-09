@@ -183,7 +183,7 @@ inputs = {
   # Storage settings
   storage_type  = "s3"
   s3_bucket_name = dependency.s3.outputs.s3_bucket_id
-  s3_region      = "us-east-1"
+  s3_region      = "us-west-2"
   s3_access_key  = "use_irsa" # Use IAM Roles for Service Accounts instead
   s3_secret_key  = "use_irsa" # Use IAM Roles for Service Accounts instead
   
@@ -337,7 +337,7 @@ EOF
       ;;
     "rds")
       # RDS depends on VPC and KMS
-      cat > "$terragrunt_file" << EOF
+      cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -416,7 +416,7 @@ EOF
       ;;
     "s3")
       # S3 depends on KMS
-      cat > "$terragrunt_file" << EOF
+      cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -462,7 +462,7 @@ EOF
       ;;
     "efs")
       # EFS depends on VPC and KMS
-      cat > "$terragrunt_file" << EOF
+      cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -558,7 +558,7 @@ EOF
       ;;
     "vpc")
       # VPC has no dependencies but we'll still update for consistency
-      cat > "$terragrunt_file" << EOF
+      cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -615,7 +615,7 @@ EOF
       ;;
     "kms")
       # KMS has no dependencies
-      cat > "$terragrunt_file" << EOF
+cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -638,7 +638,7 @@ EOF
       ;;
     "waf")
       # WAF has no direct infrastructure dependencies
-      cat > "$terragrunt_file" << EOF
+      cat > "$terragrunt_file" << 'EOF'
 include {
   path = find_in_parent_folders()
 }
@@ -802,7 +802,7 @@ resource "null_resource" "cleanup_eks_resources" {
       echo "Starting pre-destroy cleanup for EKS cluster \${self.triggers.cluster_name}..."
       
       # Update kubeconfig
-      aws eks update-kubeconfig --name \${self.triggers.cluster_name} --region us-east-1
+      aws eks update-kubeconfig --name \${self.triggers.cluster_name} --region us-west-2
 
       # Delete all Harbor resources
       kubectl delete namespace harbor --ignore-not-found=true

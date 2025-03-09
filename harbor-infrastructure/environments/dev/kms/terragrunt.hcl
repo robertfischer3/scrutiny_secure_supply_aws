@@ -14,11 +14,5 @@ inputs = {
   enable_default_policy        = true
   key_administrators           = ["arn:aws:iam::${get_aws_account_id()}:role/Admin"]
   key_users                    = ["arn:aws:iam::${get_aws_account_id()}:role/HarborKMSUser"]
-  attach_to_eks_role           = true
-  eks_cluster_role_name        = dependency.eks.outputs.cluster_iam_role_name
-  enable_secretsmanager_grants = true
-}
-
-dependency "eks" {
-  config_path = "../eks"
+  attach_to_eks_role           = false  # Will be updated after EKS is created
 }

@@ -50,15 +50,15 @@ check_resource_exists() {
   
   case $resource_type in
     "eks")
-      aws eks describe-cluster --name $identifier --region us-east-1 >/dev/null 2>&1
+      aws eks describe-cluster --name $identifier --region us-west-2 >/dev/null 2>&1
       return $?
       ;;
     "vpc")
-      aws ec2 describe-vpcs --vpc-ids $identifier --region us-east-1 >/dev/null 2>&1
+      aws ec2 describe-vpcs --vpc-ids $identifier --region us-west-2 >/dev/null 2>&1
       return $?
       ;;
     "rds")
-      aws rds describe-db-instances --db-instance-identifier $identifier --region us-east-1 >/dev/null 2>&1
+      aws rds describe-db-instances --db-instance-identifier $identifier --region us-west-2 >/dev/null 2>&1
       return $?
       ;;
     *)

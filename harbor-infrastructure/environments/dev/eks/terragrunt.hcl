@@ -117,3 +117,8 @@ dependency "kms" {
 dependency "s3" {
   config_path = "../s3"
 }
+
+# Explicitly state that this module cannot be created until VPC and KMS are ready
+dependencies {
+  paths = ["../vpc", "../kms", "../s3"]
+}
