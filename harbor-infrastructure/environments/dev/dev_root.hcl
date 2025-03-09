@@ -29,5 +29,5 @@ inputs = {
   node_instance_types = local.node_instance_types
   harbor_domain       = local.harbor_domain
   harbor_namespace    = local.harbor_namespace
-  bob                = "bob"
+
 }

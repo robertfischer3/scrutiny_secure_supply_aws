@@ -49,7 +49,7 @@ inputs = {
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
-      cidr_block  = "10.0.0.0/16"
+      cidr_block  = read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.vpc_cidr
     }
   ]
 }
