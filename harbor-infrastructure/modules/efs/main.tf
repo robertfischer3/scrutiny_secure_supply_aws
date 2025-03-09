@@ -133,14 +133,8 @@ resource "aws_efs_replication_configuration" "this" {
   
   destination {
     region = var.replication_destination_region
-    
     # Use KMS encryption for the replicated data if KMS is enabled on source
-    dynamic "kms_key_id" {
-      for_each = var.encrypted && var.replication_kms_key_id != null ? [1] : []
-      content {
-        kms_key_id = var.replication_kms_key_id
-      }
-    }
+    kms_key_id = var.encrypted && var.replication_kms_key_id != null ? var.replication_kms_key_id : null
   }
 }
 
