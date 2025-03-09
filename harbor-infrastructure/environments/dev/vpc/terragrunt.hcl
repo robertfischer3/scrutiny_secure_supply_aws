@@ -1,7 +1,12 @@
-include "dev_root" {
-  path = find_in_parent_folders("dev_root.hcl")
+include "root" {
+  path = find_in_parent_folders()
+}
+
+include "env" {
+  path = find_in_parent_folders("dev_env.hcl")
   expose = true
-  
+  merge_strategy = "no_merge"
+
 }
 
 terraform {
@@ -10,9 +15,10 @@ terraform {
 
 
 inputs = {
-  vpc_name             = "harbor-vpc-${read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.environment}"
+  vpc_name             = "harbor-vpc-${include.env.inputs.environment}"
+
   enable_nat_gateway   = true
-  single_nat_gateway   = read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.environment != "prod" # Use multiple NAT gateways only in prod
+  single_nat_gateway   = include.env.inputs.environment != "prod" # Use multiple NAT gateways only in prod
   enable_dns_hostnames = true
   enable_dns_support   = true
   
@@ -49,7 +55,7 @@ inputs = {
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
-      cidr_block  = read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.vpc_cidr
+      cidr_block  = include.env.inputs.vpc_cidr
     }
   ]
 }

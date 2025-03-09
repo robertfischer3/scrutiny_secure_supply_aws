@@ -9,9 +9,6 @@ remote_state {
   }
 }
 
-terraform {
-  backend "s3" {}
-}
 
 generate "provider" {
   path      = "provider.tf"
