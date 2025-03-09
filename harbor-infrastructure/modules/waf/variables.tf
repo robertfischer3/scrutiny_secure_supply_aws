@@ -117,10 +117,28 @@ variable "redacted_fields" {
 
 variable "logging_filter" {
   description = "Logging filter for the WAF WebACL"
-  type        = any
-  default     = null
+  type = object({
+    default_behavior = string
+    filters = list(object({
+      behavior = string
+      conditions = list(object({
+        requirement = string
+        action_condition = optional(object({
+          action = string
+        }))
+        label_name_condition = optional(object({
+          label_name = string
+        }))
+      }))
+    }))
+  })
+  default = null
+  
+  validation {
+    condition     = var.logging_filter == null ? true : contains(["KEEP", "DROP"], var.logging_filter.default_behavior)
+    error_message = "The default_behavior must be either KEEP or DROP."
+  }
 }
-
 variable "create_dashboard" {
   description = "Whether to create a CloudWatch dashboard for the WAF WebACL"
   type        = bool

@@ -402,31 +402,32 @@ resource "aws_wafv2_web_acl_logging_configuration" "main" {
         for_each = logging_filter.value.filters
         content {
           behavior = filter.value.behavior
-          
+          requirement = filter.value.requirement
+
           dynamic "condition" {
-            for_each = filter.value.conditions
-            content {
-              dynamic "action_condition" {
-                for_each = lookup(condition.value, "action_condition", null) != null ? [condition.value.action_condition] : []
+                for_each = filter.value.conditions
                 content {
-                  action = action_condition.value.action
+
+                  dynamic "action_condition" {
+                    for_each = lookup(condition.value, "action_condition", null) != null ? [condition.value.action_condition] : []
+                    content {
+                      action = action_condition.value.action
+                    }
+                  }
+                  
+                  dynamic "label_name_condition" {
+                    for_each = lookup(condition.value, "label_name_condition", null) != null ? [condition.value.label_name_condition] : []
+                    content {
+                      label_name = label_name_condition.value.label_name
+                    }
+                  }
                 }
-              }
-              
-              dynamic "label_name_condition" {
-                for_each = lookup(condition.value, "label_name_condition", null) != null ? [condition.value.label_name_condition] : []
-                content {
-                  label_name = label_name_condition.value.label_name
-                }
-              }
-            }
-          }
         }
       }
     }
   }
 }
-
+}
 # CloudWatch dashboard for WAF metrics
 resource "aws_cloudwatch_dashboard" "waf" {
   count          = var.create_dashboard ? 1 : 0
