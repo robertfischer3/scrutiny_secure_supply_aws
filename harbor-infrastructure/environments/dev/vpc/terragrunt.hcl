@@ -1,15 +1,18 @@
-include {
-  path = find_in_parent_folders()
+include "dev_root" {
+  path = find_in_parent_folders("dev_root.hcl")
+  expose = true
+  
 }
 
 terraform {
   source = "../../../modules/vpc"
 }
 
+
 inputs = {
-  vpc_name             = "harbor-vpc-${local.environment}"
+  vpc_name             = "harbor-vpc-${read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.environment}"
   enable_nat_gateway   = true
-  single_nat_gateway   = local.environment != "prod" # Use multiple NAT gateways only in prod
+  single_nat_gateway   = read_terragrunt_config(find_in_parent_folders("dev_root.hcl")).inputs.environment != "prod" # Use multiple NAT gateways only in prod
   enable_dns_hostnames = true
   enable_dns_support   = true
   
@@ -46,7 +49,7 @@ inputs = {
       from_port   = 0
       to_port     = 0
       protocol    = "-1"
-      cidr_block  = local.vpc_cidr
+      cidr_block  = "10.0.0.0/16"
     }
   ]
 }

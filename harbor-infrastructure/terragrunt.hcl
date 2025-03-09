@@ -9,6 +9,10 @@ remote_state {
   }
 }
 
+terraform {
+  backend "s3" {}
+}
+
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
@@ -67,4 +71,5 @@ EOF
 
 locals {
   env = regex(".*/([^/]+)/.+$", get_terragrunt_dir())[0]
+  environment = "dev"
 }
