@@ -1,64 +1,139 @@
-output "key_id" {
-  description = "The ID of the KMS key"
-  value       = aws_kms_key.this.id
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
 }
 
-output "key_arn" {
-  description = "The ARN of the KMS key"
-  value       = aws_kms_key.this.arn
+variable "is_testing_mode" {
+  description = "Whether we're running in testing mode (affects key creation behavior)"
+  type        = bool
+  default     = false
 }
 
-output "alias_name" {
-  description = "The alias of the KMS key"
-  value       = aws_kms_alias.this.name
+
+variable "existing_key_id" {
+  description = "ID of an existing KMS key to use during testing instead of creating a new one"
+  type        = string
+  default     = ""
 }
 
-output "alias_arn" {
-  description = "The ARN of the KMS key alias"
-  value       = aws_kms_alias.this.arn
+variable "skip_creation" {
+  description = "Skip creation of KMS resources entirely (useful when key is pending deletion)"
+  type        = bool
+  default     = false
 }
 
-output "key_usage" {
-  description = "The usage of the KMS key (ENCRYPT_DECRYPT or SIGN_VERIFY)"
-  value       = aws_kms_key.this.key_usage
+variable "alias_name" {
+  description = "Alias name for the KMS key"
+  type        = string
+  default     = "alias/harbor-key"
 }
 
-output "key_spec" {
-  description = "The type of key material in the KMS key"
-  value       = aws_kms_key.this.customer_master_key_spec
+variable "description" {
+  description = "Description for the KMS key"
+  type        = string
+  default     = "KMS key for Harbor encryption"
 }
 
-output "s3_grant_id" {
-  description = "The unique ID of the S3 grant"
-  value       = var.enable_s3_grants ? aws_kms_grant.s3[0].id : null
+variable "deletion_window_in_days" {
+  description = "Duration in days after which the key is deleted after destruction of the resource"
+  type        = number
+  default     = 30
+  validation {
+    condition     = var.deletion_window_in_days >= 7 && var.deletion_window_in_days <= 30
+    error_message = "Deletion window must be between 7 and 30 days."
+  }
 }
 
-output "rds_grant_id" {
-  description = "The unique ID of the RDS grant"
-  value       = var.enable_rds_grants ? aws_kms_grant.rds[0].id : null
+variable "enable_key_rotation" {
+  description = "Specifies whether key rotation is enabled"
+  type        = bool
+  default     = true
 }
 
-output "ebs_grant_id" {
-  description = "The unique ID of the EBS grant"
-  value       = var.enable_ebs_grants ? aws_kms_grant.ebs[0].id : null
+variable "key_usage" {
+  description = "Specifies the intended use of the key"
+  type        = string
+  default     = "ENCRYPT_DECRYPT"
+  validation {
+    condition     = var.key_usage == "ENCRYPT_DECRYPT" || var.key_usage == "SIGN_VERIFY"
+    error_message = "Key usage must be either ENCRYPT_DECRYPT or SIGN_VERIFY."
+  }
 }
 
-output "efs_grant_id" {
-  description = "The unique ID of the EFS grant"
-  value       = var.enable_efs_grants ? aws_kms_grant.efs[0].id : null
+variable customer_master_key_spec {
+  description = "Specifies the type of KMS key to create"
+  type        = string
+  default     = "SYMMETRIC_DEFAULT"
 }
 
-output "key_policy" {
-  description = "The policy document applied to the KMS key"
-  value       = var.enable_default_policy ? data.aws_iam_policy_document.default[0].json : var.key_policy
+variable "enable_default_policy" {
+  description = "Specifies whether to use a default policy or a custom one"
+  type        = bool
+  default     = true
 }
 
-output "key_rotation_enabled" {
-  description = "Whether key rotation is enabled"
-  value       = aws_kms_key.this.enable_key_rotation
+variable "key_policy" {
+  description = "A valid policy JSON document for the KMS key"
+  type        = string
+  default     = null
 }
 
-output "deletion_window_in_days" {
-  description = "Duration in days after which the key is deleted"
-  value       = aws_kms_key.this.deletion_window_in_days
+variable "key_administrators" {
+  description = "List of IAM ARNs for key administrators"
+  type        = list(string)
+  default     = []
+}
+
+variable "key_users" {
+  description = "List of IAM ARNs for key users"
+  type        = list(string)
+  default     = []
+}
+
+variable "attach_to_eks_role" {
+  description = "Whether to allow EKS cluster role to use the key"
+  type        = bool
+  default     = false
+}
+
+variable "eks_cluster_role_name" {
+  description = "Name of the EKS cluster IAM role"
+  type        = string
+  default     = ""
+}
+
+variable "enable_secretsmanager_grants" {
+  description = "Whether to allow Secrets Manager to use the key"
+  type        = bool
+  default     = true
+}
+
+variable "enable_s3_grants" {
+  description = "Whether to create KMS grants for S3"
+  type        = bool
+  default     = true
+}
+
+variable "enable_rds_grants" {
+  description = "Whether to create KMS grants for RDS"
+  type        = bool
+  default     = true
+}
+
+variable "enable_ebs_grants" {
+  description = "Whether to create KMS grants for EBS"
+  type        = bool
+  default     = true
+}
+
+variable "enable_efs_grants" {
+  description = "Whether to create KMS grants for EFS"
+  type        = bool
+  default     = true
+}
+
+variable "tags" {
+  description = "Map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }

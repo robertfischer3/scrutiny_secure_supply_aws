@@ -201,7 +201,7 @@ Check the deployment and destruction logs in the `logs/` directory for detailed 
 
 ## MIT License
 
-Copyright (c) 2025 Robert Fisc
+Copyright (c) 2025 Robert Fischer
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

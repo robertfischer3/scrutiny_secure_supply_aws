@@ -1,7 +1,29 @@
+
+# Lookup existing key if provided
+data "aws_kms_key" "existing" {
+  count  = var.is_testing_mode && var.existing_key_id != "" ? 1 : 0
+  key_id = var.existing_key_id
+}
+
+locals {
+  # Determine if we should create a new key
+  create_key = !var.skip_creation && (var.existing_key_id == "" || !var.is_testing_mode)
+
+  # Key ID to use (either from new resource or existing)
+  key_id = var.is_testing_mode && var.existing_key_id != "" ? var.existing_key_id : (local.create_key ? aws_kms_key.this[0].key_id : "")
+
+  # Key ARN to use
+  key_arn = var.is_testing_mode && var.existing_key_id != "" ? data.aws_kms_key.existing[0].arn : (local.create_key ? aws_kms_key.this[0].arn : "")
+}
+
 resource "aws_kms_key" "this" {
+  count                   = local.create_key ? 1 : 0
   description             = var.description
   deletion_window_in_days = var.deletion_window_in_days
   enable_key_rotation     = var.enable_key_rotation
+  customer_master_key_spec = var.customer_master_key_spec
+
+  key_usage = "ENCRYPT_DECRYPT"
   policy                  = var.enable_default_policy ? data.aws_iam_policy_document.default[0].json : var.key_policy
 
   tags = merge(
@@ -14,8 +36,9 @@ resource "aws_kms_key" "this" {
 }
 
 resource "aws_kms_alias" "this" {
+  count         = local.create_key || (var.is_testing_mode && var.existing_key_id != "") ? 1 : 0
   name          = var.alias_name
-  target_key_id = aws_kms_key.this.key_id
+  target_key_id = local.key_id
 }
 
 data "aws_iam_policy_document" "default" {
@@ -160,7 +183,7 @@ data "aws_iam_policy_document" "default" {
 resource "aws_kms_grant" "s3" {
   count             = var.enable_s3_grants ? 1 : 0
   name              = "s3-${var.environment}"
-  key_id            = aws_kms_key.this.key_id
+  key_id            = local.key_id
   grantee_principal = "s3.amazonaws.com"
   operations        = ["Encrypt", "Decrypt", "GenerateDataKey"]
 }
@@ -168,7 +191,7 @@ resource "aws_kms_grant" "s3" {
 resource "aws_kms_grant" "rds" {
   count             = var.enable_rds_grants ? 1 : 0
   name              = "rds-${var.environment}"
-  key_id            = aws_kms_key.this.key_id
+  key_id            = local.key_id
   grantee_principal = "rds.amazonaws.com"
   operations        = ["Encrypt", "Decrypt", "GenerateDataKey"]
 }
@@ -176,7 +199,7 @@ resource "aws_kms_grant" "rds" {
 resource "aws_kms_grant" "ebs" {
   count             = var.enable_ebs_grants ? 1 : 0
   name              = "ebs-${var.environment}"
-  key_id            = aws_kms_key.this.key_id
+  key_id            = local.key_id
   grantee_principal = "ec2.amazonaws.com"
   operations        = ["Encrypt", "Decrypt", "GenerateDataKey"]
 }
@@ -184,7 +207,7 @@ resource "aws_kms_grant" "ebs" {
 resource "aws_kms_grant" "efs" {
   count             = var.enable_efs_grants ? 1 : 0
   name              = "efs-${var.environment}"
-  key_id            = aws_kms_key.this.key_id
+  key_id            = local.key_id
   grantee_principal = "elasticfilesystem.amazonaws.com"
   operations        = ["Encrypt", "Decrypt", "GenerateDataKey"]
 }

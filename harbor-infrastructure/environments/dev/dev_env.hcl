@@ -16,6 +16,16 @@ locals {
   # Harbor configuration
   harbor_domain       = "harbor-${local.environment}.scrutiny-harbor.com"
   harbor_namespace    = "harbor"
+
+  is_testing_mode     = true # Set to true to enable deletion protection for KMS key
+  deletion_window_in_days = 7 # Reduced to 7 days for dev purposes
+
+   # Only create a new key if not in testing mode or if the key doesn't exist
+  create_new_key               = false
+  
+  # When testing, try to use an existing key with this prefix if available
+  reuse_existing_key_prefix    = "harbor-keys-${local.environment}"
+  aws_account_id = get_aws_account_id()
 }
 
 inputs = {
@@ -29,5 +39,13 @@ inputs = {
   node_instance_types = local.node_instance_types
   harbor_domain       = local.harbor_domain
   harbor_namespace    = local.harbor_namespace
+  create_new_key      = local.create_new_key
+  reuse_existing_key_prefix = local.reuse_existing_key_prefix
+  is_testing_mode     = local.is_testing_mode
+  aws_account_id      = local.aws_account_id
+  deletion_window_in_days = local.deletion_window_in_days
+  enable_key_rotation = true
+  key_usage           = "ENCRYPT_DECRYPT"
+  
 
 }
