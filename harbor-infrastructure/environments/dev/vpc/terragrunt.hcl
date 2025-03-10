@@ -16,6 +16,10 @@ terraform {
 
 inputs = {
   vpc_name             = "harbor-vpc-${include.env.inputs.environment}"
+  availability_zones   = include.env.inputs.availability_zones
+  private_subnets      = include.env.inputs.private_subnets
+  public_subnets       = include.env.inputs.public_subnets
+  environment          = include.env.inputs.environment
 
   enable_nat_gateway   = true
   single_nat_gateway   = include.env.inputs.environment != "prod" # Use multiple NAT gateways only in prod
