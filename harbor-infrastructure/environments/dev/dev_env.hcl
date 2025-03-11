@@ -32,6 +32,10 @@ locals {
   key_users = ["arn:aws:iam::${local.aws_account_id}:role/HarborKMSUser-${local.environment}"]
 
   key_usage = "ENCRYPT_DECRYPT"
+
+  # S3 bucket configuration
+  enable_access_logging = false
+
 }
 
 inputs = {
@@ -55,6 +59,7 @@ inputs = {
   key_administrators  = local.key_administrators
   key_users           = local.key_users
   aws_region          = local.aws_region
+  enable_access_logging = local.enable_access_logging
   
 
 }

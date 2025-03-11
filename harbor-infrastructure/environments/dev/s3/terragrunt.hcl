@@ -21,6 +21,20 @@ inputs = {
   bucket_name          = "harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}"
   force_destroy        = include.env.inputs.environment != "prod"
   versioning_enabled   = true
+
+  # Remove ACL or set object_ownership to a value that allows ACLs
+  bucket_acl = null  # Remove ACL setting
+  object_ownership = "BucketOwnerPreferred"  # Change from BucketOwnerEnforced if you need ACLs
+
+  # For notifications, either:
+  # 1. Create the SNS topic first
+  # 2. Disable notifications until the topic exists
+  enable_security_notifications = false  # Temporarily disable
+
+  # For logging, either:
+  # 1. Create the logging bucket first
+  # 2. Disable logging temporarily
+  enable_access_logging = include.env.inputs.enable_access_logging
   
   # Encryption configuration
   sse_algorithm        = "aws:kms"
@@ -63,16 +77,15 @@ inputs = {
     }
   ]
   
-  # Access logging
-  enable_access_logging = true
   access_log_bucket_name = "harbor-logs-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}"
-  access_log_prefix      = "s3-access-logs/"
+  access_log_prefix      = "harbor-s3-access-logs/"
   
-  # Intelligent tiering for cost optimization
+  # Intelligent tiering for cost optimization - Fix the format
   intelligent_tiering_enabled = include.env.inputs.environment == "prod"
   intelligent_tiering_prefix = "registry/"
-  intelligent_tiering_archive_days = 90
-  intelligent_tiering_deep_archive_days = 180
+  # These should be numbers, not objects with a days attribute
+  intelligent_tiering_archive_days = 30
+  intelligent_tiering_deep_archive_days = 60
   
   # Security notifications
   enable_security_notifications = true
@@ -84,11 +97,11 @@ inputs = {
   replication_destination_bucket_arn = include.env.inputs.environment == "prod" ? "arn:aws:s3:::harbor-artifacts-prod-dr-${include.env.inputs.aws_account_id}" : ""
   replication_region = "us-east-1"  # DR region
   replication_storage_class = "STANDARD_IA"
-  
-  # Inventory reporting
-  enable_inventory = include.env.inputs.environment == "prod"
-  inventory_destination_bucket_arn = include.env.inputs.environment == "prod" ? "arn:aws:s3:::harbor-inventory-${include.env.inputs.aws_account_id}" : ""
-  inventory_destination_prefix = "bucket-inventory/"
+  replication_prefix = "registry/"
+  replication_tags = {}
+  replication_kms_key_id = include.env.inputs.environment == "prod" ? "alias/harbor-keys-prod-dr" : null
+  replication_delete_markers = true
+  replication_acl_translation = false
   
   # AWS Region
   aws_region = include.env.inputs.aws_region

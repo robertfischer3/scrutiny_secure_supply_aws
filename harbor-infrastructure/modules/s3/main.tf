@@ -3,7 +3,7 @@ module "s3_bucket" {
   version = "~> 3.0"
 
   bucket = var.bucket_name
-  acl    = var.bucket_acl
+  acl = var.object_ownership == "BucketOwnerEnforced" ? null : var.bucket_acl
 
   # S2C2F compliance - Force private access
   block_public_acls       = var.block_public_access
@@ -11,6 +11,7 @@ module "s3_bucket" {
   ignore_public_acls      = var.block_public_access
   restrict_public_buckets = var.block_public_access
 
+  # Don't apply ACL if object ownership doesn't allow it
   # S2C2F compliance - Versioning for artifact integrity
   versioning = {
     enabled = var.versioning_enabled
@@ -36,7 +37,7 @@ module "s3_bucket" {
       
       # Optional expiration configuration
       expiration = var.lifecycle_expiration
-
+      
       # Optional noncurrent version expiration
       noncurrent_version_expiration = var.lifecycle_noncurrent_version_expiration
       
@@ -45,11 +46,16 @@ module "s3_bucket" {
       
       # Optional noncurrent version transitions
       noncurrent_version_transition = var.lifecycle_noncurrent_version_transitions
+
+      # Filter needs to be set properly to avoid warnings
+      filter = {
+        prefix = "registry/"
+      }
     }
   ] : []
 
-  # S2C2F compliance - Access logging
-  logging = var.enable_access_logging ? {
+  # Only create logging configuration if target bucket exists or is being created
+  logging = var.enable_access_logging && (var.access_log_bucket_name != "" && var.access_log_bucket_name != null) ? {
     target_bucket = var.access_log_bucket_name
     target_prefix = var.access_log_prefix
   } : {}
@@ -67,6 +73,7 @@ module "s3_bucket" {
   } : null
 
   # S2C2F compliance - Cross-region replication
+  # Use the proper format expected by the AWS module
   replication_configuration = var.enable_replication ? {
     role = aws_iam_role.replication[0].arn
     rules = [
@@ -102,25 +109,30 @@ module "s3_bucket" {
         delete_marker_replication_status = var.replication_delete_markers ? "Enabled" : "Disabled"
       }
     ]
-  } : null
+  } : {}
 
   # S2C2F compliance - CORS configuration if needed
   cors_rule = var.enable_cors ? var.cors_rule : []
 
   # S2C2F compliance - Intelligent tiering for cost optimization
-  intelligent_tiering = {
+  # Fix the intelligent tiering format
+  intelligent_tiering = var.intelligent_tiering_enabled ? {
     general = {
-      status = var.intelligent_tiering_enabled ? "Enabled" : "Disabled"
+      status = "Enabled"
       filter = {
         prefix = var.intelligent_tiering_prefix
         tags   = var.intelligent_tiering_tags
       }
       tiering = {
-        archive_access_tier_days = var.intelligent_tiering_archive_days
-        deep_archive_access_tier_days = var.intelligent_tiering_deep_archive_days
+        archive_access = {
+          days = var.intelligent_tiering_archive_days
+        }
+        deep_archive_access = {
+          days = var.intelligent_tiering_deep_archive_days
+        }
       }
     }
-  }
+  } : {}
 
   # Allow bucket to be destroyed even with content
   force_destroy = var.force_destroy
