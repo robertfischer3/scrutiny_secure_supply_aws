@@ -64,6 +64,15 @@ wait_for_resource() {
   log "$resource_type $identifier is now available"
 }
 
+deploy_layer_0() {
+  log "=== Deploying Layer 0: Identity and Access Management ==="
+  
+  # IAM roles and policies (needed for KMS and other resources)
+  run_terragrunt "iam" "apply"
+  
+  log "Layer 0 deployment complete"
+}
+
 # Layer 1: Infrastructure Foundation
 deploy_layer_1() {
   log "=== Deploying Layer 1: Infrastructure Foundation ==="
@@ -139,6 +148,7 @@ deploy_layer_4() {
 # Main deployment function
 deploy_all() {
   log "Starting deployment for $ENVIRONMENT environment"
+  deploy_layer_0
   deploy_layer_1
   deploy_layer_2
   deploy_layer_3

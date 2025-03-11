@@ -12,6 +12,7 @@ locals {
   cluster_name        = "harbor-${local.environment}"
   kubernetes_version  = "1.28"
   node_instance_types = ["m5.large"]
+  aws_region = get_env("scrutiny_harbor_aws_region")
   
   # Harbor configuration
   harbor_domain       = "harbor-${local.environment}.scrutiny-harbor.com"
@@ -26,6 +27,11 @@ locals {
   # When testing, try to use an existing key with this prefix if available
   reuse_existing_key_prefix    = "harbor-keys-${local.environment}"
   aws_account_id = get_aws_account_id()
+
+  key_administrators = ["arn:aws:iam::${local.aws_account_id}:role/HarborAdmin-${local.environment}", "arn:aws:iam::${local.aws_account_id}:role/HarborKMSAdmin-${local.environment}"]
+  key_users = ["arn:aws:iam::${local.aws_account_id}:role/HarborKMSUser-${local.environment}"]
+
+  key_usage = "ENCRYPT_DECRYPT"
 }
 
 inputs = {
@@ -45,7 +51,10 @@ inputs = {
   aws_account_id      = local.aws_account_id
   deletion_window_in_days = local.deletion_window_in_days
   enable_key_rotation = true
-  key_usage           = "ENCRYPT_DECRYPT"
+  key_usage           = local.key_usage
+  key_administrators  = local.key_administrators
+  key_users           = local.key_users
+  aws_region          = local.aws_region
   
 
 }

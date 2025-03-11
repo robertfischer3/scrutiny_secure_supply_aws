@@ -41,6 +41,25 @@ cleanup:
 	@chmod +x scripts/update-dependencies.sh
 	@scripts/update-dependencies.sh $(ENV) --create-cleanup
 
+apply-iam-dev:
+	@echo "Deploying Harbor IAM resources to DEV environment..."
+	@cd harbor-infrastructure/environments/dev/iam && terragrunt apply
+
+apply-iam-staging:
+	@echo "Deploying Harbor IAM resources to STAGING environment..."
+	@cd harbor-infrastructure/environments/staging/iam && terragrunt apply
+
+apply-iam-prod:
+	@echo "ATTENTION: You are about to deploy IAM resources to PRODUCTION environment!"
+	@read -p "Are you sure you want to proceed? (y/n) " -n 1 -r; \
+	echo ""; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "Deploying Harbor IAM resources to PRODUCTION environment..."; \
+		cd harbor-infrastructure/environments/prod/iam && terragrunt apply; \
+	else \
+		echo "Deployment canceled."; \
+	fi
+
 # Apply environments
 apply-dev:
 	@echo "Deploying Harbor Infrastructure to DEV environment..."

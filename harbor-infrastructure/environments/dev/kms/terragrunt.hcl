@@ -9,6 +9,10 @@ include "env" {
 
 }
 
+dependency "iam" {
+  config_path = "../iam"
+}
+
 terraform {
   source = "../../../modules/kms"
 }
@@ -19,8 +23,9 @@ inputs = {
   deletion_window_in_days      = include.env.inputs.deletion_window_in_days
   enable_key_rotation          = true
   enable_default_policy        = true
-  key_administrators           = ["arn:aws:iam::${include.env.inputs.aws_account_id}:role/Admin"]
-  key_users                    = ["arn:aws:iam::${include.env.inputs.aws_account_id}:role/HarborKMSUser"]
+  key_administrators           = include.env.inputs.key_administrators
+  key_users                    = include.env.inputs.key_users
+  
   attach_to_eks_role           = false  # Will be updated after EKS is created
   is_testing_mode              = include.env.inputs.is_testing_mode
   create_new_key               = include.env.inputs.create_new_key
