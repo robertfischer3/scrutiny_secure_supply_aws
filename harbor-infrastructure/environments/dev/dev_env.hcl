@@ -35,7 +35,7 @@ locals {
 
   # S3 bucket configuration
   enable_access_logging = false
-
+  enable_security_notifications = false
 }
 
 inputs = {
@@ -60,6 +60,7 @@ inputs = {
   key_users           = local.key_users
   aws_region          = local.aws_region
   enable_access_logging = local.enable_access_logging
+  enable_security_notifications = local.enable_security_notifications
   
 
 }

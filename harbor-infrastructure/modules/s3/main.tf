@@ -278,12 +278,18 @@ resource "aws_iam_role_policy_attachment" "replication" {
 }
 
 # S2C2F compliance - Event notifications for security events
+# S2C2F compliance - Event notifications for security events
 resource "aws_s3_bucket_notification" "security_notifications" {
   count  = var.enable_security_notifications && (var.notification_topic_arn != "" || var.notification_lambda_function_arn != "") ? 1 : 0
   bucket = module.s3_bucket.s3_bucket_id
 
+ # Explicitly check that the topic ARN follows a valid pattern
+  # This is to prevent errors when trying to configure notifications to non-existent topics
   dynamic "topic" {
-    for_each = var.enable_security_notifications && var.notification_topic_arn != "" ? [var.notification_topic_arn] : []
+    for_each = var.enable_security_notifications && 
+               var.notification_topic_arn != "" && 
+               can(regex("^arn:aws:sns:", var.notification_topic_arn)) ? 
+               [var.notification_topic_arn] : []
     content {
       topic_arn     = topic.value
       events        = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"]
@@ -291,14 +297,24 @@ resource "aws_s3_bucket_notification" "security_notifications" {
     }
   }
   
+  # Similarly check that lambda ARN is valid
   dynamic "lambda_function" {
-    for_each = var.enable_security_notifications && var.notification_lambda_function_arn != "" ? [var.notification_lambda_function_arn] : []
+    for_each = var.enable_security_notifications && 
+               var.notification_lambda_function_arn != "" &&
+               can(regex("^arn:aws:lambda:", var.notification_lambda_function_arn)) ?
+               [var.notification_lambda_function_arn] : []
     content {
       lambda_function_arn = lambda_function.value
       events              = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"] 
       filter_prefix       = var.security_notification_prefix
     }
   }
+  
+  depends_on = [
+    # Add explicit depends_on to help with the ordering
+    # These will be no-ops if the resources don't exist
+    aws_s3_bucket_policy.require_tls
+  ]
 }
 # S2C2F compliance - Inventory configuration for asset tracking
 resource "aws_s3_bucket_inventory" "inventory" {
