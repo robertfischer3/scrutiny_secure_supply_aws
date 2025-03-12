@@ -68,10 +68,10 @@ output "lifecycle_rules_enabled" {
   value       = var.lifecycle_rule_enabled
 }
 
-output "notification_configuration" {
-  description = "The notification configuration for the bucket"
-  value       = var.enable_security_notifications ? aws_s3_bucket_notification.security_notifications[0].topic : null
-}
+# output "notification_configuration" {
+#  description = "The notification configuration for the bucket"
+#  value       = var.enable_security_notifications ? aws_s3_bucket_notification.security_notifications[0].topic : null
+#}
 
 output "inventory_enabled" {
   description = "Whether inventory reporting is enabled"

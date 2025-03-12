@@ -279,28 +279,27 @@ resource "aws_iam_role_policy_attachment" "replication" {
 
 # S2C2F compliance - Event notifications for security events
 resource "aws_s3_bucket_notification" "security_notifications" {
-  count  = var.enable_security_notifications ? 1 : 0
+  count  = var.enable_security_notifications && (var.notification_topic_arn != "" || var.notification_lambda_function_arn != "") ? 1 : 0
   bucket = module.s3_bucket.s3_bucket_id
 
   dynamic "topic" {
-    for_each = var.notification_topic_arn != "" ? [1] : []
+    for_each = var.enable_security_notifications && var.notification_topic_arn != "" ? [var.notification_topic_arn] : []
     content {
-      topic_arn     = var.notification_topic_arn
+      topic_arn     = topic.value
       events        = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"]
       filter_prefix = var.security_notification_prefix
     }
   }
   
   dynamic "lambda_function" {
-    for_each = var.notification_lambda_function_arn != "" ? [1] : []
+    for_each = var.enable_security_notifications && var.notification_lambda_function_arn != "" ? [var.notification_lambda_function_arn] : []
     content {
-      lambda_function_arn = var.notification_lambda_function_arn
+      lambda_function_arn = lambda_function.value
       events              = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"] 
       filter_prefix       = var.security_notification_prefix
     }
   }
 }
-
 # S2C2F compliance - Inventory configuration for asset tracking
 resource "aws_s3_bucket_inventory" "inventory" {
   count  = var.enable_inventory ? 1 : 0
