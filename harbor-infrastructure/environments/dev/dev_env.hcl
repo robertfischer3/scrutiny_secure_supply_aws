@@ -36,6 +36,8 @@ locals {
   # S3 bucket configuration
   enable_access_logging = false
   enable_security_notifications = false
+  control_object_ownership = true
+  object_ownership = "BucketOwnerEnforced"
 }
 
 inputs = {
@@ -61,6 +63,8 @@ inputs = {
   aws_region          = local.aws_region
   enable_access_logging = local.enable_access_logging
   enable_security_notifications = local.enable_security_notifications
+  control_object_ownership = local.control_object_ownership
+  object_ownership     = local.object_ownership
   
 
 }

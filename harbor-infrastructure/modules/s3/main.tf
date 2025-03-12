@@ -11,6 +11,10 @@ module "s3_bucket" {
   ignore_public_acls      = var.block_public_access
   restrict_public_buckets = var.block_public_access
 
+  # Set ownership controls
+  control_object_ownership = true
+  object_ownership         = var.object_ownership
+
   # Don't apply ACL if object ownership doesn't allow it
   # S2C2F compliance - Versioning for artifact integrity
   versioning = {
@@ -278,44 +282,24 @@ resource "aws_iam_role_policy_attachment" "replication" {
 }
 
 # S2C2F compliance - Event notifications for security events
-# S2C2F compliance - Event notifications for security events
 resource "aws_s3_bucket_notification" "security_notifications" {
-  count  = var.enable_security_notifications && (var.notification_topic_arn != "" || var.notification_lambda_function_arn != "") ? 1 : 0
+  # Only create if notifications are enabled and a topic ARN is provided
+  count  = var.enable_security_notifications && var.notification_topic_arn != "" ? 1 : 0
   bucket = module.s3_bucket.s3_bucket_id
 
- # Explicitly check that the topic ARN follows a valid pattern
-  # This is to prevent errors when trying to configure notifications to non-existent topics
-  dynamic "topic" {
-    for_each = var.enable_security_notifications && 
-               var.notification_topic_arn != "" && 
-               can(regex("^arn:aws:sns:", var.notification_topic_arn)) ? 
-               [var.notification_topic_arn] : []
-    content {
-      topic_arn     = topic.value
-      events        = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"]
-      filter_prefix = var.security_notification_prefix
-    }
+  # Simple topic configuration - assumes the topic exists
+  topic {
+    topic_arn     = var.notification_topic_arn
+    events        = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"]
+    filter_prefix = var.security_notification_prefix
   }
-  
-  # Similarly check that lambda ARN is valid
-  dynamic "lambda_function" {
-    for_each = var.enable_security_notifications && 
-               var.notification_lambda_function_arn != "" &&
-               can(regex("^arn:aws:lambda:", var.notification_lambda_function_arn)) ?
-               [var.notification_lambda_function_arn] : []
-    content {
-      lambda_function_arn = lambda_function.value
-      events              = ["s3:ObjectRemoved:*", "s3:ObjectCreated:*"] 
-      filter_prefix       = var.security_notification_prefix
-    }
-  }
-  
+
+  # Only include this depends_on if you're using the TLS policy
   depends_on = [
-    # Add explicit depends_on to help with the ordering
-    # These will be no-ops if the resources don't exist
     aws_s3_bucket_policy.require_tls
   ]
 }
+
 # S2C2F compliance - Inventory configuration for asset tracking
 resource "aws_s3_bucket_inventory" "inventory" {
   count  = var.enable_inventory ? 1 : 0
