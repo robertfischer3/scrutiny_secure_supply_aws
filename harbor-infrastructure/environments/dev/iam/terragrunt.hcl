@@ -1,5 +1,3 @@
-# harbor-infrastructure/environments/dev/iam/terragrunt.hcl
-
 include {
   path = find_in_parent_folders()
 }
@@ -18,26 +16,22 @@ inputs = {
   environment = include.env.inputs.environment
   
   admin_principals = [
-    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"  # For testing, use the account root
-    # You can add more ARNs for actual administrators here
+    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"
   ]
   
   operator_principals = [
-    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"  # For testing, use the account root
-    # You can add more ARNs for operators here
+    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"
   ]
   
   service_principals = [
-    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"  # For testing, use the account root
+    "arn:aws:iam::${include.env.inputs.aws_account_id}:root"
   ]
   
-  # This will be updated with the actual S3 bucket ARN once it's created
-  # For now, we use a placeholder that will need to be updated
-  harbor_s3_bucket_arn = "arn:aws:s3:::harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}"
+  # Use a placeholder ARN instead of referring to the actual S3 bucket
+  harbor_s3_bucket_arn = "arn:aws:s3:::harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}-placeholder"
   
-  create_instance_profiles = false  # Set to true if you need EC2 instance profiles
-  
-  enable_cross_account_access = false  # Set to true for cross-account scenarios
+  create_instance_profiles = false
+  enable_cross_account_access = false
   
   tags = {
     Project     = "Harbor-S2C2F"
@@ -46,12 +40,7 @@ inputs = {
   }
 }
 
-# Once the S3 bucket is created, we need to create a dependency on it
-# For now, we comment this out since we're setting up the IAM module first
-# dependency "s3" {
-#   config_path = "../s3"
-# }
-
-# inputs = {
-#   harbor_s3_bucket_arn = dependency.s3.outputs.s3_bucket_arn
+# Remove the dependency on S3
+# dependencies {
+#   paths = ["../s3"]
 # }

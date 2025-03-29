@@ -6,6 +6,27 @@ terraform {
   source = "../../../modules/harbor"
 }
 
+# Add these dependencies to get the proper outputs from other modules
+dependency "eks" {
+  config_path = "../eks"
+  skip_outputs = false
+}
+
+dependency "rds" {
+  config_path = "../rds"
+  skip_outputs = false
+}
+
+dependency "s3" {
+  config_path = "../s3"
+  skip_outputs = false
+}
+
+dependency "waf" {
+  config_path = "../waf"
+  skip_outputs = false
+}
+
 inputs = {
   # Basic settings
   namespace    = local.harbor_namespace
@@ -16,7 +37,7 @@ inputs = {
   eks_cluster_name    = dependency.eks.outputs.cluster_name
   eks_oidc_provider_arn = dependency.eks.outputs.oidc_provider_arn
   
-  # Storage settings
+  # Storage settings - use the S3 bucket name from the S3 module output
   storage_type  = "s3"
   s3_bucket_name = dependency.s3.outputs.s3_bucket_id
   s3_region      = "us-west-2"
@@ -143,26 +164,6 @@ inputs = {
       size = "5Gi"
     }
   }
-}
-
-dependency "eks" {
-  config_path = "../eks"
-  skip_outputs = false
-}
-
-dependency "rds" {
-  config_path = "../rds"
-  skip_outputs = false
-}
-
-dependency "s3" {
-  config_path = "../s3"
-  skip_outputs = false
-}
-
-dependency "waf" {
-  config_path = "../waf"
-  skip_outputs = false
 }
 
 # Explicitly state that this module cannot be created until dependencies are ready
