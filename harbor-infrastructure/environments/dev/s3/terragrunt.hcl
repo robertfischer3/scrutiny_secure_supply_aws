@@ -12,6 +12,20 @@ terraform {
   source = "../../../modules/s3"
 }
 
+# Add this to generate a random suffix
+generate "random" {
+  path      = "random.tf"
+  if_exists = "overwrite"
+  contents  = <<EOF
+
+resource "random_string" "bucket_suffix" {
+  length  = 8
+  special = false
+  upper   = false
+}
+EOF
+}
+
 dependency "kms" {
   config_path = "../kms"
   skip_outputs = false
@@ -24,7 +38,8 @@ dependency "sns" {
 }
 
 inputs = {
-  bucket_name          = "harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}"
+  # Add random suffix to bucket name to avoid conflicts
+  bucket_name          = "harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}-$${random_string.bucket_suffix.result}"
   force_destroy        = include.env.inputs.environment != "prod"
   versioning_enabled   = true
   
