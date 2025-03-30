@@ -75,7 +75,7 @@ inputs = {
   intelligent_tiering_deep_archive_days = 180
   
   # Security notifications
-  enable_security_notifications = true
+  enable_security_notifications = false
   notification_topic_arn = "arn:aws:sns:${include.env.inputs.aws_region}:${include.env.inputs.aws_account_id}:harbor-security-notifications"
   security_notification_prefix = "registry/"
   

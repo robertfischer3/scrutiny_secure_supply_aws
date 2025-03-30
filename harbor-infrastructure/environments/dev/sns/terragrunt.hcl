@@ -23,14 +23,9 @@ inputs = {
   display_name   = "Harbor Security Notifications"
   kms_key_id     = dependency.kms.outputs.key_id
   
-  # This is initially empty and will be updated later with the S3 bucket ARN
-  # after the circular dependency is resolved
-  s3_bucket_arns = []
-  
-  # Add any email addresses that should receive notifications
+  # Email addresses for notifications
   email_subscriptions = []
   
-  # Tags
   tags = {
     Project     = "Harbor-S2C2F"
     Environment = include.env.inputs.environment
@@ -39,7 +34,6 @@ inputs = {
   }
 }
 
-# Explicitly state that this module depends on KMS
 dependencies {
   paths = ["../kms"]
 }

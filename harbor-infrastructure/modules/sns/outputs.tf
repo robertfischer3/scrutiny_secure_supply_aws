@@ -18,10 +18,7 @@ output "topic_owner" {
   value       = aws_sns_topic.this.owner
 }
 
-output "subscription_arns" {
-  description = "ARNs of the SNS topic subscriptions"
-  value       = concat(
-    aws_sns_topic_subscription.email[*].arn,
-    aws_sns_topic_subscription.lambda[*].arn
-  )
+output "policy_id" {
+  description = "The ID of the SNS topic policy"
+  value       = aws_sns_topic_policy.default.id
 }
