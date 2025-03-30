@@ -7,28 +7,68 @@ terraform {
 }
 
 inputs = {
-  name                    = "harbor-efs-${local.environment}"
+  name                    = "harbor-efs-${include.env.inputs.environment}"
   encrypted               = true
   kms_key_id              = dependency.kms.outputs.key_arn
   performance_mode        = "generalPurpose"
   throughput_mode         = "bursting"
-  vpc_id                  = dependency.vpc.outputs.vpc_id
-  subnet_ids              = dependency.vpc.outputs.private_subnets
+  
+  # Enhanced security group rules
   security_group_rules = {
-    ingress = {
+    ingress_eks = {
       from_port   = 2049
       to_port     = 2049
       protocol    = "tcp"
-      cidr_blocks = dependency.vpc.outputs.private_subnets_cidr_blocks
-      description = "NFS from private subnets"
+      source_security_group_id = dependency.eks.outputs.node_security_group_id
+      description = "NFS from EKS nodes only"
     }
   }
   
-  # Lifecycle policy - transition files to IA after 30 days
-  lifecycle_policy = [{
-    transition_to_ia = "AFTER_30_DAYS"
-  }]
+  # Create a default access point with least privilege
+  create_access_point = true
+  access_point_posix_user = {
+    gid = 1000
+    uid = 1000
+  }
+  access_point_root_directory = {
+    path = "/harbor"
+    creation_info = {
+      owner_gid   = 1000
+      owner_uid   = 1000
+      permissions = "0755"
+    }
+  }
   
+  lifecycle_policy = [
+    {
+      transition_to_ia = "AFTER_30_DAYS"
+    },
+    {
+      transition_to_primary_storage_class = "AFTER_1_ACCESS"
+    }
+  ]
+
+   # CloudWatch alarms
+  create_cloudwatch_alarms = true
+  burst_credit_balance_threshold = 1000000000 # 1GB
+  percent_io_limit_threshold = 70
+  alarm_actions = [dependency.sns.outputs.topic_arn]
+  
+  # Backup policies
+  create_backup_plan = true
+  backup_schedule = "cron(0 1 * * ? *)"
+  backup_retention_days = include.env.inputs.environment == "prod" ? 90 : 30
+  
+  # Add S2C2F tags
+  tags = {
+    Environment = include.env.inputs.environment
+    Project     = "Harbor-S2C2F"
+    ManagedBy   = "Terragrunt"
+    Compliance  = "S2C2F-Level3"
+    Component   = "Storage"
+    DataClass   = "Restricted"
+  }
+
   # Backup policy
   backup_policy = {
     status = "ENABLED"

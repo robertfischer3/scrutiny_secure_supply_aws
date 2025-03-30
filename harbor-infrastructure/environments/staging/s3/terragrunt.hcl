@@ -39,8 +39,10 @@ inputs = {
     days = include.env.inputs.environment == "prod" ? 0 : 90  # 0 means never expire in prod
   }
   lifecycle_noncurrent_version_expiration = {
-    days = include.env.inputs.environment == "prod" ? 365 : 30
+    # noncurrent_days = include.env.inputs.environment == "prod" ? 365 : 30
+    noncurrent_days = 30
   }
+
   lifecycle_transitions = [
     {
       days          = 30

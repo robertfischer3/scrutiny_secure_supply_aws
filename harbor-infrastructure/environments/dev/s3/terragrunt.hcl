@@ -38,6 +38,10 @@ inputs = {
   block_public_access  = true
   require_tls          = true
   object_ownership     = include.env.inputs.object_ownership
+
+  lifecycle_noncurrent_version_expiration = {
+  noncurrent_days = include.env.inputs.environment == "prod" ? 365 : 30
+}
   
   # Other S3 configurations as needed
   # Note: No notification configuration here

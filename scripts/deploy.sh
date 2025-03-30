@@ -6,6 +6,8 @@ set -e
 # Configuration
 ENVIRONMENT=${1:-dev}  # Default to dev if not specified
 BASE_DIR="harbor-infrastructure/environments/$ENVIRONMENT"
+MODULE_DIR="../harbor-infrastructure/modules"
+
 LOG_DIR="logs"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
@@ -23,14 +25,17 @@ log() {
 run_terragrunt() {
   local module=$1
   local action=$2
-  local module_path="$BASE_DIR/$module"
+  local module_path=$MODULE_DIR
+  local base_dir="../$BASE_DIR"
   
   log "Starting terragrunt $action on $module module..."
   
   if [ -d "$module_path" ]; then
-    cd $module_path
+    cd $base_dir
+
     terragrunt $action --terragrunt-non-interactive | tee -a $DEPLOY_LOG
     cd - > /dev/null
+    cd ../scripts
     log "Completed terragrunt $action on $module module"
   else
     log "Error: Module directory $module_path does not exist!"
@@ -77,9 +82,12 @@ deploy_layer_0() {
 deploy_layer_1() {
   log "=== Deploying Layer 1: Infrastructure Foundation ==="
   
+
+  echo "Deploying KMS..."
   # KMS keys first (needed for encrypted resources)
   run_terragrunt "kms" "apply"
   
+  echo "Deploying VPC..."
   # VPC (core networking)
   run_terragrunt "vpc" "apply"
   
@@ -87,6 +95,10 @@ deploy_layer_1() {
   VPC_ID=$(cd $BASE_DIR/vpc && terragrunt output -raw vpc_id)
   wait_for_resource "vpc" $VPC_ID 600
   
+  echo "Deploying SNS..."
+  # SNS for notifications
+  run_terragrunt "sns" "apply"  
+
   log "Layer 1 deployment complete"
 }
 
@@ -94,12 +106,18 @@ deploy_layer_1() {
 deploy_layer_2() {
   log "=== Deploying Layer 2: Storage and Database ==="
   
+  echo "Deploying S3 Buckets..."
   # S3 buckets
   run_terragrunt "s3" "apply"
+
+  echo "Deploying S3 Notifications..."
+  run_terragrunt "s3_notifications" "apply"
   
+  echo "Deploying EFS Storage..."
   # EFS storage
   run_terragrunt "efs" "apply"
   
+  echo "Deploying RDS..."
   # RDS database
   run_terragrunt "rds" "apply"
   
@@ -151,8 +169,8 @@ deploy_all() {
   deploy_layer_0
   deploy_layer_1
   deploy_layer_2
-  deploy_layer_3
-  deploy_layer_4
+ # deploy_layer_3
+ # deploy_layer_4
   log "Complete deployment finished successfully for $ENVIRONMENT environment"
 }
 
