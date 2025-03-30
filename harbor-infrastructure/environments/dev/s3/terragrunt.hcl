@@ -12,34 +12,20 @@ terraform {
   source = "../../../modules/s3"
 }
 
-# Add this to generate a random suffix
-generate "random" {
-  path      = "random.tf"
-  if_exists = "overwrite"
-  contents  = <<EOF
-
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-EOF
-}
-
 dependency "kms" {
   config_path = "../kms"
   skip_outputs = false
 }
 
-# Assume SNS topic exists
-dependency "sns" {
-  config_path = "../sns"
-  skip_outputs = false
+# Generate a shorter bucket name
+locals {
+  # Use a shorter prefix and truncate the account ID
+  account_suffix = substr(include.env.inputs.aws_account_id, -6, -1)
+  bucket_name = "harbor-${include.env.inputs.environment}-${local.account_suffix}"
 }
 
 inputs = {
-  # Add random suffix to bucket name to avoid conflicts
-  bucket_name          = "harbor-artifacts-${include.env.inputs.environment}-${include.env.inputs.aws_account_id}-$${random_string.bucket_suffix.result}"
+  bucket_name          = local.bucket_name
   force_destroy        = include.env.inputs.environment != "prod"
   versioning_enabled   = true
   
@@ -51,39 +37,10 @@ inputs = {
   # Security configurations
   block_public_access  = true
   require_tls          = true
-
-  # Set to BucketOwnerEnforced to support notifications
   object_ownership     = include.env.inputs.object_ownership
-  bucket_acl           = null
   
-  # Lifecycle configuration
-  lifecycle_rule_enabled = true
-  lifecycle_expiration = {
-    days = include.env.inputs.environment == "prod" ? 0 : 90
-  }
-  lifecycle_noncurrent_version_expiration = {
-    days = include.env.inputs.environment == "prod" ? 365 : 30
-  }
-  
-  # CORS configuration
-  enable_cors = true
-  cors_rule = [
-    {
-      allowed_headers = ["*"]
-      allowed_methods = ["GET", "PUT", "POST", "DELETE", "HEAD"]
-      allowed_origins = ["https://${include.env.inputs.harbor_domain}"]
-      max_age_seconds = 3000
-    }
-  ]
-  
-  # Uncomment and set to true when ready to enable notifications
-  enable_security_notifications = true
-  # Reference the SNS topic ARN
-  notification_topic_arn = dependency.sns.outputs.topic_arn
-  security_notification_prefix = "registry/"
-  
-  # AWS Region
-  aws_region = include.env.inputs.aws_region
+  # Other S3 configurations as needed
+  # Note: No notification configuration here
   
   # Tags
   tags = {
@@ -95,7 +52,6 @@ inputs = {
   }
 }
 
-# Include both dependencies
 dependencies {
-  paths = ["../kms", "../sns"]
+  paths = ["../kms"]
 }

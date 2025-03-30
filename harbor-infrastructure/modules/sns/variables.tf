@@ -20,12 +20,6 @@ variable "kms_key_id" {
   default     = ""
 }
 
-variable "s3_bucket_arns" {
-  description = "List of S3 bucket ARNs that are allowed to publish to this topic"
-  type        = list(string)
-  default     = []
-}
-
 variable "email_subscriptions" {
   description = "List of email addresses to subscribe to the topic"
   type        = list(string)
