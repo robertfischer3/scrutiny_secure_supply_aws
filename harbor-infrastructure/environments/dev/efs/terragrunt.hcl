@@ -2,6 +2,12 @@ include {
   path = find_in_parent_folders()
 }
 
+include "env" {
+  path = find_in_parent_folders("dev_env.hcl")
+  expose = true
+  merge_strategy = "no_merge"
+}
+
 terraform {
   source = "../../../modules/efs"
 }

@@ -1,6 +1,6 @@
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "~> 19.0"
+  version = "~> 20.0"
 
   # Cluster configuration
   cluster_name                    = var.name
@@ -34,10 +34,6 @@ module "eks" {
   cluster_security_group_additional_rules = var.cluster_security_group_additional_rules
   node_security_group_additional_rules    = var.node_security_group_additional_rules
   
-  # AWS Auth configuration for additional IAM roles/users
-  manage_aws_auth_configmap = var.manage_aws_auth_configmap
-  aws_auth_roles            = var.aws_auth_roles
-  aws_auth_users            = var.aws_auth_users
   
   # CloudWatch Logs configuration
   cluster_enabled_log_types = var.cluster_enabled_log_types
@@ -156,6 +152,14 @@ resource "aws_iam_role_policy_attachment" "harbor_s3_policy_attachment" {
   count      = var.create_iam_role_harbor_s3 ? 1 : 0
   role       = aws_iam_role.harbor_s3_role[0].name
   policy_arn = aws_iam_policy.harbor_s3_policy[0].arn
+}
+
+resource "aws_eks_pod_identity_association" "harbor_core" {
+  count           = var.enable_pod_identity && var.create_iam_role_harbor_s3 ? 1 : 0
+  cluster_name    = module.eks.cluster_name
+  namespace       = var.harbor_namespace
+  service_account = "harbor-core"
+  role_arn        = aws_iam_role.harbor_s3_role[0].arn
 }
 
 # Create Kubernetes service account annotation for Harbor

@@ -3,12 +3,15 @@
 
 set -e
 
+# Get the absolute path of the script directory
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get the project root directory (parent of the script directory)
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+
 # Configuration
 ENVIRONMENT=${1:-dev}  # Default to dev if not specified
-BASE_DIR="harbor-infrastructure/environments/$ENVIRONMENT"
-MODULE_DIR="../harbor-infrastructure/modules"
-
-LOG_DIR="logs"
+BASE_DIR="${PROJECT_ROOT}/harbor-infrastructure/environments/$ENVIRONMENT"
+LOG_DIR="${PROJECT_ROOT}/logs"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Create log directory if it doesn't exist
@@ -25,17 +28,18 @@ log() {
 run_terragrunt() {
   local module=$1
   local action=$2
-  local module_path=$MODULE_DIR
-  local base_dir="../$BASE_DIR"
+  local module_path="$BASE_DIR/$module"
   
   log "Starting terragrunt $action on $module module..."
   
   if [ -d "$module_path" ]; then
-    cd $base_dir
-
+    # Save current directory
+    CURRENT_DIR=$(pwd)
+    # Change to module directory
+    cd $module_path
     terragrunt $action --terragrunt-non-interactive | tee -a $DEPLOY_LOG
-    cd - > /dev/null
-    cd ../scripts
+    # Return to previous directory
+    cd "$CURRENT_DIR"
     log "Completed terragrunt $action on $module module"
   else
     log "Error: Module directory $module_path does not exist!"
@@ -52,13 +56,37 @@ wait_for_resource() {
   
   case $resource_type in
     "eks")
-      aws eks wait cluster-active --name $identifier --region us-west-2 --timeout-seconds $timeout
+      # Use a loop instead of relying on the timeout parameter
+      local end_time=$(($(date +%s) + timeout))
+      while [ $(date +%s) -lt $end_time ]; do
+        if aws eks describe-cluster --name $identifier --region us-west-2 --query 'cluster.status' --output text 2>/dev/null | grep -q ACTIVE; then
+          break
+        fi
+        sleep 30
+        log "Still waiting for EKS cluster $identifier..."
+      done
       ;;
     "vpc")
-      aws ec2 wait vpc-available --vpc-ids $identifier --region us-west-2 --timeout-seconds $timeout
+      # Use a loop instead of relying on the timeout parameter
+      local end_time=$(($(date +%s) + timeout))
+      while [ $(date +%s) -lt $end_time ]; do
+        if aws ec2 describe-vpcs --vpc-ids $identifier --region us-west-2 --query 'Vpcs[0].State' --output text 2>/dev/null | grep -q available; then
+          break
+        fi
+        sleep 10
+        log "Still waiting for VPC $identifier..."
+      done
       ;;
     "rds")
-      aws rds wait db-instance-available --db-instance-identifier $identifier --region us-west-2 --timeout-seconds $timeout
+      # Use a loop instead of relying on the timeout parameter
+      local end_time=$(($(date +%s) + timeout))
+      while [ $(date +%s) -lt $end_time ]; do
+        if aws rds describe-db-instances --db-instance-identifier $identifier --region us-west-2 --query 'DBInstances[0].DBInstanceStatus' --output text 2>/dev/null | grep -q available; then
+          break
+        fi
+        sleep 30
+        log "Still waiting for RDS instance $identifier..."
+      done
       ;;
     *)
       log "Unknown resource type: $resource_type"
@@ -82,23 +110,22 @@ deploy_layer_0() {
 deploy_layer_1() {
   log "=== Deploying Layer 1: Infrastructure Foundation ==="
   
-
-  echo "Deploying KMS..."
   # KMS keys first (needed for encrypted resources)
   run_terragrunt "kms" "apply"
   
-  echo "Deploying VPC..."
   # VPC (core networking)
   run_terragrunt "vpc" "apply"
   
   # Wait for VPC to be fully available
-  VPC_ID=$(cd $BASE_DIR/vpc && terragrunt output -raw vpc_id)
+  # Save current directory before changing to VPC module
+  CURRENT_DIR=$(pwd)
+  cd $BASE_DIR/vpc
+  VPC_ID=$(terragrunt output -raw vpc_id)
+  # Return to previous directory
+  cd "$CURRENT_DIR"
+  
   wait_for_resource "vpc" $VPC_ID 600
   
-  echo "Deploying SNS..."
-  # SNS for notifications
-  run_terragrunt "sns" "apply"  
-
   log "Layer 1 deployment complete"
 }
 
@@ -106,14 +133,22 @@ deploy_layer_1() {
 deploy_layer_2() {
   log "=== Deploying Layer 2: Storage and Database ==="
   
-  echo "Deploying S3 Buckets..."
+  echo "Deploying S3 buckets..."
   # S3 buckets
   run_terragrunt "s3" "apply"
-
-  echo "Deploying S3 Notifications..."
-  run_terragrunt "s3_notifications" "apply"
   
-  echo "Deploying EFS Storage..."
+  echo "Deploying SNS..."
+  # SNS topics (if needed for S3 notifications)
+  if [ -d "$BASE_DIR/sns" ]; then
+    run_terragrunt "sns" "apply"
+  
+    # S3 notifications (if module exists)
+    if [ -d "$BASE_DIR/s3-notifications" ]; then
+      run_terragrunt "s3-notifications" "apply"
+    fi
+  fi
+  
+  echo "Deploying EFS..."
   # EFS storage
   run_terragrunt "efs" "apply"
   
@@ -122,7 +157,13 @@ deploy_layer_2() {
   run_terragrunt "rds" "apply"
   
   # Wait for RDS to be available
-  RDS_IDENTIFIER=$(cd $BASE_DIR/rds && terragrunt output -raw db_instance_identifier 2>/dev/null || echo "")
+  # Save current directory before changing to RDS module
+  CURRENT_DIR=$(pwd)
+  cd $BASE_DIR/rds
+  RDS_IDENTIFIER=$(terragrunt output -raw db_instance_identifier 2>/dev/null || echo "")
+  # Return to previous directory
+  cd "$CURRENT_DIR"
+  
   if [ ! -z "$RDS_IDENTIFIER" ]; then
     wait_for_resource "rds" $RDS_IDENTIFIER 1200  # RDS can take a while
   else
@@ -144,7 +185,13 @@ deploy_layer_3() {
   run_terragrunt "eks" "apply"
   
   # Wait for EKS to be available
-  EKS_CLUSTER=$(cd $BASE_DIR/eks && terragrunt output -raw cluster_name 2>/dev/null || echo "harbor-$ENVIRONMENT")
+  # Save current directory before changing to EKS module
+  CURRENT_DIR=$(pwd)
+  cd $BASE_DIR/eks
+  EKS_CLUSTER=$(terragrunt output -raw cluster_name 2>/dev/null || echo "harbor-$ENVIRONMENT")
+  # Return to previous directory
+  cd "$CURRENT_DIR"
+  
   wait_for_resource "eks" $EKS_CLUSTER 900  # EKS can take 15 minutes
   
   log "Layer 3 deployment complete"
@@ -169,8 +216,8 @@ deploy_all() {
   deploy_layer_0
   deploy_layer_1
   deploy_layer_2
- # deploy_layer_3
- # deploy_layer_4
+  # deploy_layer_3
+  # deploy_layer_4
   log "Complete deployment finished successfully for $ENVIRONMENT environment"
 }
 

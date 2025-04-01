@@ -130,6 +130,7 @@ destroy_layer_2() {
   # Get RDS identifier before destroying
   RDS_IDENTIFIER=$(cd $BASE_DIR/rds && terragrunt output -raw db_instance_identifier 2>/dev/null || echo "")
   
+  echo "RDS Identifier: $RDS_IDENTIFIER"
   # RDS database
   run_terragrunt_destroy "rds"
   
@@ -159,7 +160,7 @@ destroy_layer_1() {
   
   # Wait for VPC to be deleted
   if [ ! -z "$VPC_ID" ]; then
-    wait_for_resource_deletion "vpc" $VPC_ID 600
+    wait_for_resource_deletion "vpc" $VPC_ID 900
   fi
   
   # KMS keys last

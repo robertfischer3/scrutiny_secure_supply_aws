@@ -2,13 +2,35 @@ include {
   path = find_in_parent_folders()
 }
 
+include "env" {
+  path = find_in_parent_folders("dev_env.hcl")
+  expose = true
+  merge_strategy = "no_merge"
+}
+
 terraform {
   source = "../../../modules/eks"
 }
 
+dependency "vpc" {
+  config_path = "../vpc"
+}
+
+dependency "kms" {
+  config_path = "../kms"
+}
+
+dependency "s3" {
+  config_path = "../s3"
+}
+
+dependency "efs" {  # Add EFS dependency for proper ordering
+  config_path = "../efs"
+  skip_outputs = true  # Skip outputs to avoid circular dependency
+}
+
 inputs = {
   # EKS Cluster Configuration
-  create_eks                      = true
   name                            = local.cluster_name
   cluster_version                 = local.kubernetes_version
   vpc_id                          = dependency.vpc.outputs.vpc_id
@@ -35,7 +57,12 @@ inputs = {
         Application = "Harbor"
       }
       
-      taints = []
+      # Updated taints configuration
+      taints = [{
+        key    = "dedicated"
+        value  = "harbor"
+        effect = "NO_SCHEDULE"
+      }]
       
       update_config = {
         max_unavailable_percentage = 50
@@ -63,62 +90,22 @@ inputs = {
   # AWS Load Balancer Controller for ingress
   enable_aws_load_balancer_controller = true
   
-  # Cluster Security Group additional rules
-  cluster_security_group_additional_rules = {
-    egress_all = {
-      description      = "Cluster all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-    }
-  }
-  
-  # Node Security Group additional rules
-  node_security_group_additional_rules = {
-    ingress_self_all = {
-      description      = "Node to node all ports/protocols"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "ingress"
-      self             = true
-    }
-    egress_all = {
-      description      = "Node all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-    }
-  }
-  
-  # AWS EFS CSI Driver for persistent volumes
+  # EFS CSI Driver configuration
   enable_efs_csi_driver = true
+  efs_file_system_id    = dependency.efs.outputs.id  # Reference EFS output
   
-  # IRSA for Harbor components
+  # Enable IRSA for Harbor components
   enable_irsa = true
   
   # Create IAM role for Harbor to access S3
   create_iam_role_harbor_s3 = true
   harbor_s3_bucket_arn      = dependency.s3.outputs.s3_bucket_arn
+  
+  # Additional security configuration
+  cluster_security_group_cidr_blocks = [local.vpc_cidr]
 }
 
-dependency "vpc" {
-  config_path = "../vpc"
-}
-
-dependency "kms" {
-  config_path = "../kms"
-}
-
-dependency "s3" {
-  config_path = "../s3"
-}
-
-# Explicitly state that this module cannot be created until VPC and KMS are ready
+# Dependencies
 dependencies {
-  paths = ["../vpc", "../kms", "../s3"]
+  paths = ["../vpc", "../kms", "../s3", "../efs"]
 }

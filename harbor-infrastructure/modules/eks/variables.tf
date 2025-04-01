@@ -99,6 +99,27 @@ variable "node_security_group_additional_rules" {
   default     = {}
 }
 
+# Add support for EKS Pod Identity (newer alternative to IRSA)
+variable "enable_pod_identity" {
+  description = "Whether to enable EKS Pod Identity"
+  type        = bool
+  default     = false
+}
+
+variable "cluster_security_group_cidr_blocks" {
+  description = "List of CIDR blocks allowed to access the cluster API endpoint"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]  # Update this default in production
+}
+
+# Update eks_managed_node_groups configuration with more options for taints
+variable "node_group_taints" {
+  description = "Map of node group taints"
+  type        = any
+  default     = {}
+}
+
+
 variable "manage_aws_auth_configmap" {
   description = "Whether to manage the aws-auth ConfigMap"
   type        = bool
@@ -223,6 +244,24 @@ variable "enable_cluster_autoscaler" {
   description = "Whether to enable Cluster Autoscaler"
   type        = bool
   default     = true
+}
+
+variable "aws_ebs_csi_driver_version" {
+  description = "Version of the AWS EBS CSI driver addon"
+  type        = string
+  default     = "v1.26.0-eksbuild.1"
+}
+
+variable "adot_addon_version" {
+  description = "Version of the AWS Distro for OpenTelemetry addon"
+  type        = string
+  default     = "v0.90.0-eksbuild.1"
+}
+
+variable "enable_adot_addon" {
+  description = "Whether to enable the AWS Distro for OpenTelemetry addon"
+  type        = bool
+  default     = false
 }
 
 variable "cluster_autoscaler_version" {
