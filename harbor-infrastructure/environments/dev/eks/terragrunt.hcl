@@ -103,6 +103,24 @@ inputs = {
   
   # Additional security configuration
   cluster_security_group_cidr_blocks = [local.vpc_cidr]
+
+    # EKS Addons configuration
+  enable_vpc_cni_addon = true
+  vpc_cni_addon_version = "v1.14.0-eksbuild.1"
+  
+  enable_coredns_addon = true
+  coredns_addon_version = "v1.10.1-eksbuild.1"
+  
+  enable_kube_proxy_addon = true
+  kube_proxy_addon_version = "v1.28.1-eksbuild.1"
+  
+  enable_amazon_eks_aws_ebs_csi_driver = true
+  aws_ebs_csi_driver_version = "v1.26.0-eksbuild.1"
+  
+  # New addons
+  enable_adot_addon = true
+  adot_addon_version = "v0.90.0-eksbuild.1"
+  
 }
 
 # Dependencies
