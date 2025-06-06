@@ -102,7 +102,7 @@ output "harbor_s3_policy_arn" {
 
 output "efs_storage_class_name" {
   description = "Name of the EFS storage class created"
-  value       = var.enable_efs_csi_driver ? kubernetes_storage_class.efs[0].metadata[0].name : ""
+  value       = var.enable_efs_csi_driver && var.efs_file_system_id != "" ? kubernetes_storage_class.efs[0].metadata[0].name : ""
 }
 
 output "prometheus_workspace_id" {
@@ -148,4 +148,54 @@ output "metrics_server_enabled" {
 output "cluster_autoscaler_enabled" {
   description = "Whether Cluster Autoscaler is enabled"
   value       = var.enable_cluster_autoscaler
+}
+
+output "adot_addon_enabled" {
+  description = "Whether AWS Distro for OpenTelemetry addon is enabled"
+  value       = var.enable_adot_addon
+}
+
+output "vpc_cni_addon_version" {
+  description = "Version of the VPC CNI addon"
+  value       = var.enable_vpc_cni_addon ? var.vpc_cni_addon_version : ""
+}
+
+output "coredns_addon_version" {
+  description = "Version of the CoreDNS addon"
+  value       = var.enable_coredns_addon ? var.coredns_addon_version : ""
+}
+
+output "kube_proxy_addon_version" {
+  description = "Version of the kube-proxy addon"
+  value       = var.enable_kube_proxy_addon ? var.kube_proxy_addon_version : ""
+}
+
+output "aws_ebs_csi_driver_version" {
+  description = "Version of the AWS EBS CSI driver addon"
+  value       = var.enable_amazon_eks_aws_ebs_csi_driver ? var.aws_ebs_csi_driver_version : ""
+}
+
+output "efs_csi_driver_version" {
+  description = "Version of the EFS CSI driver addon"
+  value       = var.enable_efs_csi_driver ? var.efs_csi_driver_version : ""
+}
+
+output "efs_csi_driver_role_arn" {
+  description = "ARN of the IAM role used by the EFS CSI driver"
+  value       = var.enable_efs_csi_driver ? module.efs_csi_irsa_role[0].iam_role_arn : ""
+}
+
+output "ebs_csi_driver_role_arn" {
+  description = "ARN of the IAM role used by the EBS CSI driver"
+  value       = var.enable_amazon_eks_aws_ebs_csi_driver ? module.ebs_csi_irsa_role[0].iam_role_arn : ""
+}
+
+output "cluster_autoscaler_role_arn" {
+  description = "ARN of the IAM role used by the Cluster Autoscaler"
+  value       = var.enable_cluster_autoscaler ? module.cluster_autoscaler_irsa[0].iam_role_arn : ""
+}
+
+output "pod_identity_enabled" {
+  description = "Whether EKS Pod Identity is enabled"
+  value       = var.enable_pod_identity
 }

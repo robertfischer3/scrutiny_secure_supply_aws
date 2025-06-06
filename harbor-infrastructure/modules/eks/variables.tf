@@ -119,7 +119,6 @@ variable "node_group_taints" {
   default     = {}
 }
 
-
 variable "manage_aws_auth_configmap" {
   description = "Whether to manage the aws-auth ConfigMap"
   type        = bool
@@ -166,6 +165,12 @@ variable "enable_efs_csi_driver" {
   description = "Whether to enable the Amazon EFS CSI driver"
   type        = bool
   default     = true
+}
+
+variable "efs_csi_driver_version" {
+  description = "Version of the EFS CSI driver addon"
+  type        = string
+  default     = "v1.5.8-eksbuild.1"
 }
 
 variable "efs_file_system_id" {
